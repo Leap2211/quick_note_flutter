@@ -19,7 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String sortOrder = 'DESC';
   FocusNode searchFocusNode = FocusNode();
 
-  final colors = ['#FFE082', '#AED581', '#81D4FA', '#FFAB91'];
+  final colors = const {'#FFE082': 'Sunshine Yellow', '#AED581': 'Fresh Green', '#81D4FA': 'Sky Blue', '#FFAB91': 'Peach'};
   final primaryBlue = const Color(0xFF42A5F5);
 
   @override
@@ -53,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  delete(noteId);
+                  delete(context, noteId);
                 },
                 child: const Text("Delete", style: TextStyle(color: Colors.red)),
               ),
@@ -62,9 +62,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> delete(int id) async {
-    await NoteProvider.deleteNote(id);
-    loadNotes();
+  Future<void> delete(BuildContext context, int id) async {
+    try {
+      await NoteProvider.deleteNote(id);
+      loadNotes(); // Refresh the list
+      if (!mounted) return; // Check if the widget is still in the tree
+
+      // Show success dialog using the new helper method
+      CustomAlertDialog.showSuccessDialog(context: context, title: 'Deleted!', content: 'The note has been successfully deleted.');
+    } catch (e) {
+      debugPrint("Failed to delete note: $e");
+    }
   }
 
   void clearFilters() {
@@ -187,6 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       value: filterColor,
                       hint: Text('Filter by Color', style: TextStyle(color: primaryBlue)),
                       dropdownColor: Colors.white,
+                      isExpanded: true,
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white,
@@ -201,30 +210,34 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderSide: BorderSide(color: primaryBlue, width: 2),
                         ),
                       ),
-                      items:
-                          [null, ...colors].map((c) {
-                            return DropdownMenuItem<String>(
-                              value: c,
-                              child:
-                                  c == null
-                                      ? const Text("All Colors")
-                                      : Row(
-                                        children: [
-                                          Container(
-                                            width: 20,
-                                            height: 20,
-                                            decoration: BoxDecoration(
-                                              color: hexToColor(c),
-                                              borderRadius: BorderRadius.circular(6),
-                                              border: Border.all(color: Colors.black26),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(c),
-                                        ],
-                                      ),
-                            );
-                          }).toList(),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text("All Colors"),
+                        ),
+                        ...colors.entries.map((entry) {
+                          return DropdownMenuItem<String>(
+                            value: entry.key,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 20,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    color: hexToColor(entry.key),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: Colors.black26),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(entry.value, overflow: TextOverflow.ellipsis)
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList()
+                      ],
                       onChanged: (val) {
                         setState(() => filterColor = val);
                         loadNotes();
@@ -353,11 +366,11 @@ class _HomeScreenState extends State<HomeScreen> {
           onPressed: () async {
             final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddNoteScreen()));
             if (result == true) {
-              CustomAlertDialog.showConfirmationDialog(
+              if (!mounted) return;
+              CustomAlertDialog.showSuccessDialog(
                 context: context,
-                title: 'Note Added ✅',
+                title: 'Note Added!',
                 content: 'Your note has been successfully saved.',
-                onConfirmed: () {},
               );
             }
             loadNotes();

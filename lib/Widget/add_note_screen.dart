@@ -19,20 +19,15 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   final primaryBlue = const Color(0xFF42A5F5);
 
   Future<void> saveNote() async {
-    final note = Note(id: 0, title: titleCtrl.text, content: contentCtrl.text, color: colorHex, createdAt: '');
-    await NoteProvider.addNote(note);
-
-    showDialog(
-      context: context,
-      builder:
-          (_) => AlertDialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Row(children: const [Icon(Icons.check_circle, color: Colors.green), SizedBox(width: 8), Text('Note Added!')]),
-            content: const Text('Your note has been saved successfully.'),
-            actions: [TextButton(onPressed: () => Navigator.popUntil(context, (route) => route.isFirst), child: const Text('OK'))],
-          ),
-    );
+    try {
+      final note = Note(id: 0, title: titleCtrl.text, content: contentCtrl.text, color: colorHex, createdAt: '');
+      await NoteProvider.addNote(note);
+      if (!mounted) return;
+      Navigator.pop(context, true); // Return true to indicate success
+    } catch (e) {
+      debugPrint("Failed to save note: $e");
+      // Optionally, show an error dialog here
+    }
   }
 
   Color hexToColor(String hex) {
