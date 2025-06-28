@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../Entitiy/Note.dart';
+import 'package:intl/intl.dart';
 
 class ViewNoteScreen extends StatelessWidget {
   final Note note;
@@ -12,8 +13,21 @@ class ViewNoteScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor = hexToColor(note.color).withOpacity(0.1);
+    final Color backgroundColor = hexToColor(note.color);
     final Color cardColor = Colors.white;
+
+    String formattedDate;
+    if (note.createdAt.isNotEmpty) {
+      try {
+        // Assuming createdAt is in ISO 8601 format from the server
+        final dateTime = DateTime.parse(note.createdAt).toLocal();
+        formattedDate = DateFormat('MMMM d, yyyy ・ h:mm a').format(dateTime);
+      } catch (e) {
+        formattedDate = note.createdAt; // Fallback if parsing fails
+      }
+    } else {
+      formattedDate = 'Not available';
+    }
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -54,14 +68,7 @@ class ViewNoteScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Title
-                Text(
-                  note.title,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E88E5),
-                  ),
-                ),
+                Text(note.title, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1E88E5))),
                 const SizedBox(height: 12),
 
                 // Divider
@@ -71,14 +78,7 @@ class ViewNoteScreen extends StatelessWidget {
                 // Content
                 Expanded(
                   child: SingleChildScrollView(
-                    child: Text(
-                      note.content,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        height: 1.5,
-                        color: Color(0xFF333333),
-                      ),
-                    ),
+                    child: Text(note.content, style: const TextStyle(fontSize: 16, height: 1.5, color: Color(0xFF333333))),
                   ),
                 ),
 
@@ -87,10 +87,7 @@ class ViewNoteScreen extends StatelessWidget {
                 // Timestamp
                 Align(
                   alignment: Alignment.bottomRight,
-                  child: Text(
-                    "Created on: ${note.createdAt}",
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600], fontStyle: FontStyle.italic),
-                  ),
+                  child: Text("Created: $formattedDate", style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontStyle: FontStyle.italic)),
                 ),
               ],
             ),
